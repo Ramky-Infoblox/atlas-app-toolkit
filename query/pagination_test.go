@@ -1,12 +1,13 @@
 package query
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestParsePagination(t *testing.T) {
 	// invalid limit
-	_, err := ParsePagination("1s", "0", "ptoken")
+	_, err := ParsePagination("1s", "0", "ptoken", "")
 	if err == nil {
 		t.Error("unexpected nil error - expected: pagination: limit - invalid syntax")
 	}
@@ -15,7 +16,7 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// negative limit
-	_, err = ParsePagination("-1", "0", "ptoken")
+	_, err = ParsePagination("-1", "0", "ptoken", "")
 	if err == nil {
 		t.Error("unexpected nil error - expected: pagination: limit must be a positive value")
 	}
@@ -24,7 +25,7 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// zero limit
-	_, err = ParsePagination("0", "0", "ptoken")
+	_, err = ParsePagination("0", "0", "ptoken", "")
 	if err == nil {
 		t.Error("unexpected nil error - expected: pagination: limit must be a positive value")
 	}
@@ -33,7 +34,7 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// invalid offset
-	_, err = ParsePagination("", "0w", "ptoken")
+	_, err = ParsePagination("", "0w", "ptoken", "")
 	if err == nil {
 		t.Error("unexpected nil error - expected: pagination: offset - invalid syntax")
 	}
@@ -42,7 +43,7 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// negative offset
-	_, err = ParsePagination("", "-1", "ptoken")
+	_, err = ParsePagination("", "-1", "ptoken", "")
 	if err == nil {
 		t.Error("unexpected nil error - expected: pagination: offset - negative value")
 	}
@@ -51,7 +52,7 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// null offset
-	p, err := ParsePagination("", "null", "ptoken")
+	p, err := ParsePagination("", "null", "ptoken", "")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -60,14 +61,14 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// first page
-	p, err = ParsePagination("", "0", "ptoken")
+	p, err = ParsePagination("", "0", "ptoken", "")
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 	if !p.FirstPage() {
 		t.Errorf("invalid value of first page: %v - expected: true", p.FirstPage())
 	}
-	p, err = ParsePagination("", "100", "null")
+	p, err = ParsePagination("", "100", "null", "")
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
@@ -81,7 +82,7 @@ func TestParsePagination(t *testing.T) {
 	}
 
 	// valid pagination
-	p, err = ParsePagination("1000", "100", "ptoken")
+	p, err = ParsePagination("1000", "100", "ptoken", "")
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
@@ -94,6 +95,30 @@ func TestParsePagination(t *testing.T) {
 	if p.GetPageToken() != "ptoken" {
 		t.Errorf("invalid page token: %q - expected: ptoken", p.GetPageToken())
 	}
+
+	// valid pagination with isTotalSizeNeeded=true
+	p, err = ParsePagination("1000", "100", "ptoken", "true")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	assert.Equal(t, true, p.GetIsTotalSizeNeeded())
+
+	// valid pagination with isTotalSizeNeeded=false
+	p, err = ParsePagination("1000", "100", "ptoken", "false")
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	assert.Equal(t, false, p.GetIsTotalSizeNeeded())
+
+	// valid pagination with isTotalSizeNeeded=null
+	p, err = ParsePagination("1000", "100", "ptoken", "null")
+	if err == nil {
+		t.Error("unexpected nil error - expected: pagination: is_total_size_needed - invalid syntax")
+	}
+	if err.Error() != "pagination: is_total_size_needed - invalid syntax" {
+		t.Errorf("invalid error: %s - expected: pagination: is_total_size_needed - invalid syntax", err)
+	}
+
 }
 
 func TestPageInfo(t *testing.T) {
